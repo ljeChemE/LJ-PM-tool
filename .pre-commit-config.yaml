@@ -1,0 +1,81 @@
+# Practices Playbook Pillar VI — commit-time enforcement, the first of two
+# layers. Hooks run the formatter, the linter, the schema-drift check, and a
+# secret scanner before a commit is even created; CI (.github/workflows/ci.yml)
+# is the second layer, running the same checks so nothing that skipped the
+# hook — a `--no-verify`, a teammate who hasn't installed hooks yet — reaches
+# a pull request unchecked either.
+#
+# Install once per clone:
+#
+#   pre-commit install
+#
+# PIN RULE — read this before bumping anything: every hook `rev` below must
+# match the version your lockfile carries for that same tool (the ruff hook
+# rev matches the ruff version in your lockfile, the eslint hook matches your
+# package.json's, and so on). Bump the lockfile and the hook rev in the same
+# commit. If they drift apart, "formatted" stops meaning the same thing
+# locally and in CI, and you get hook-passes-CI-fails (or the reverse) for no
+# reason anyone can see from the diff.
+repos:
+  # Real, working, and language-agnostic: gitleaks scans staged changes for
+  # hardcoded secrets before they can ever become a commit. This is the one
+  # hook in this file that needs no `[FILL]` — it works in any repo, on day
+  # one, before the project has even chosen a language (Playbook Pillar II).
+  - repo: https://github.com/gitleaks/gitleaks
+    # Check https://github.com/gitleaks/gitleaks/releases for current; this
+    # pin is not load-bearing on any lockfile (gitleaks isn't a project
+    # dependency), so it only needs to move when you deliberately want a
+    # newer scanner, not in lockstep with anything else in this file.
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # ---------------------------------------------------------------------------
+  # FILL: formatter + linter for your language. Exactly one example is shown
+  # per hook below, commented out and clearly marked — uncomment the one that
+  # matches your stack (or add your own) and delete the rest. Pin `rev` to
+  # match your lockfile, per the PIN RULE above.
+  # ---------------------------------------------------------------------------
+
+  # EXAMPLE for a Python project using ruff (formatter + linter in one tool):
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.8.0  # FILL: match the ruff version pinned in your lockfile
+  #   hooks:
+  #     - id: ruff
+  #       args: [--fix]
+  #     - id: ruff-format
+
+  # EXAMPLE for a JS/TS project using eslint + prettier:
+  # - repo: https://github.com/pre-commit/mirrors-eslint
+  #   rev: v9.15.0  # FILL: match the eslint version pinned in your lockfile
+  #   hooks:
+  #     - id: eslint
+  # - repo: https://github.com/pre-commit/mirrors-prettier
+  #   rev: v3.3.3  # FILL: match the prettier version pinned in your lockfile
+  #   hooks:
+  #     - id: prettier
+
+  # ---------------------------------------------------------------------------
+  # FILL: schema-drift hook — the same "models and migrations disagree" check
+  # CI's schema-drift job runs (see ci.yml), but at commit time, before the
+  # drift ever leaves your machine. Uncomment and fill in the real command.
+  # ---------------------------------------------------------------------------
+  # - repo: local
+  #   hooks:
+  #     - id: schema-drift
+  #       name: Schema drift check
+  #       # language: system runs whatever's already on the machine (or dev
+  #       # container) rather than making pre-commit manage a toolchain for a
+  #       # single local check.
+  #       language: system
+  #       # FILL: your framework's "models match migrations" check, e.g.
+  #       #   just schema-drift
+  #       # or run directly rather than through the task runner:
+  #       #   python manage.py makemigrations --check --dry-run
+  #       entry: "[FILL: your framework's 'models match migrations' check]"
+  #       pass_filenames: false
+  #       # If the dev stack (containers, local services) is down, this check
+  #       # has nothing to check against. Let it skip cleanly rather than
+  #       # fail the commit on an environment problem unrelated to the diff —
+  #       # CI catches real drift regardless, against a stack that's
+  #       # guaranteed to be up.

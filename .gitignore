@@ -1,0 +1,40 @@
+# ==============================================================================
+# .gitignore — universal entries (Practices Playbook Pillars II, VI, VIII)
+# ==============================================================================
+
+# --- Secrets (Pillar II) -----------------------------------------------------
+# The real .env is machine-local and never committed. The negation keeps the
+# committed example — the actual contract — tracked despite the pattern above.
+.env
+.env.*
+!.env.example
+
+# --- OS junk ------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Editor / IDE directories --------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Dependency + build output -------------------------------------------------
+# FILL: your language's dependency and build directories, e.g.:
+#   node_modules/
+#   .venv/
+#   dist/
+#   build/
+#   target/
+
+# --- Test / coverage output ----------------------------------------------------
+htmlcov/
+coverage/
+.coverage
+*.cover
+
+# --- Local data (Pillar VIII) ---------------------------------------------------
+# Real data never enters git — Playbook Pillar VIII. Exports, dumps, and
+# fixtures derived from production belong on disk only, never in a commit.
+data/
