@@ -1,0 +1,231 @@
+name: CI
+
+# Practices Playbook Pillar VI — CI is tiered by risk and cost, and it
+# triggers on pull requests, not pushes, so no minutes are spent twice.
+#
+# Deliberately no `push:` trigger: a branch with an open PR fires the
+# `pull_request` event on every push to it already; adding a `push:` trigger
+# would run this entire matrix a second time for the same commit. A branch
+# with no open PR yet has nothing worth gating (nobody is about to merge it),
+# so it correctly spends zero minutes either way. `workflow_dispatch` is the
+# escape hatch for re-running the gate without pushing an empty commit.
+on:
+  pull_request:
+  workflow_dispatch:
+
+# One in-flight run per ref. A new push to the same PR makes the previous
+# run's result moot before it finishes, so cancel it rather than let two runs
+# race for the same status checks.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege at the top level: every job inherits read-only unless it
+# declares more. None of the jobs below need more.
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # FAST TIER — every PR, every push to a PR. Minutes-not-hours by design:
+  # lint, types, drift, unit, integration. This is the tier a contributor
+  # waits on, so it stays cheap on purpose.
+  # ---------------------------------------------------------------------------
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: install your toolchain (pinned via lockfile)
+      # - uses: actions/setup-node@v4
+      #   with:
+      #     node-version-file: ".nvmrc"
+      #     cache: "npm"
+      # - run: npm ci
+
+      # FILL: run the check (e.g. the same command as 'just lint')
+      # - run: just lint
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: install your toolchain (pinned via lockfile)
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version-file: ".python-version"
+      # - run: pip install -r requirements-lock.txt
+
+      # FILL: run the check (e.g. the same command as 'just typecheck')
+      # - run: just typecheck
+
+  schema-drift:
+    name: Schema drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: install your toolchain (pinned via lockfile)
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version-file: ".python-version"
+      # - run: pip install -r requirements-lock.txt
+
+      # FILL: run the check (e.g. the same command as 'just schema-drift').
+      # This must fail the build the moment committed migrations and the
+      # model definitions they were generated from disagree — that's the
+      # whole point of the check (Playbook Pillar IV).
+      # - run: just schema-drift
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: install your toolchain (pinned via lockfile)
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version-file: ".python-version"
+      # - run: pip install -r requirements-lock.txt
+
+      # FILL: run the check (e.g. the same command as 'just test unit')
+      # - run: just test unit
+
+  integration-tests:
+    name: Integration tests
+    runs-on: ubuntu-latest
+
+    # Run the real engine at the production major version — substitutes let
+    # schema changes lie (Playbook Pillar IV). Uncomment, pin the image tag
+    # to your actual production major version, and match the env vars your
+    # app expects for a connection string.
+    # services:
+    #   datastore:
+    #     image: postgres:16
+    #     env:
+    #       POSTGRES_USER: app
+    #       POSTGRES_PASSWORD: app
+    #       POSTGRES_DB: app_test
+    #     ports:
+    #       - 5432:5432
+    #     options: >-
+    #       --health-cmd="pg_isready -U app"
+    #       --health-interval=10s
+    #       --health-timeout=5s
+    #       --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: install your toolchain (pinned via lockfile)
+      # - uses: actions/setup-python@v5
+      #   with:
+      #     python-version-file: ".python-version"
+      # - run: pip install -r requirements-lock.txt
+
+      # FILL: run the check (e.g. the same command as 'just test integration')
+      # - run: just test integration
+
+  # ---------------------------------------------------------------------------
+  # FULL GATE — only on workflow_dispatch, or a PR whose base is `main` (i.e.
+  # the develop-to-main release PR). This is the tiering economics: e2e
+  # browsers, a fresh image build, and a vulnerability-DB pull are each
+  # minutes on their own, and every feature/fix/docs PR merges into `develop`,
+  # not `main` — paying that cost on every one of those PRs would make CI the
+  # thing people route around. Pay it once, at the door production walks
+  # through.
+  # ---------------------------------------------------------------------------
+
+  e2e-tests:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: install your toolchain and start the stack under test
+      # - run: just up
+
+      # FILL: run the end-to-end suite (e.g. the same command as 'just e2e').
+      # If there is a UI, run accessibility checks (axe or equivalent) as
+      # part of this job, against the real built stylesheet — a11y is a gate
+      # here, not a suggestion (Playbook Pillar IV).
+      # - run: just e2e
+
+  vuln-scan:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+
+      # FILL: build the production artifact — the same image/package you'd
+      # actually publish, not a lighter dev variant. Scanning anything else
+      # answers a question nobody asked.
+      # - run: docker build -t app:scan .
+
+      # FILL: scan it. Example using Trivy against a container image:
+      # - uses: aquasecurity/trivy-action@0.28.0
+      #   with:
+      #     image-ref: "app:scan"
+      #     severity: "HIGH,CRITICAL"
+      #     exit-code: "1"
+      #     ignore-unfixed: true
+      #     # Cache disabled deliberately: Trivy's vulnerability-DB cache is
+      #     # keyed per-ref by default, so every branch/PR would write its
+      #     # own DB snapshot into the shared Actions cache — that blows
+      #     # through the repo's 10 GB cache cap fast, and LRU eviction at
+      #     # the cap starts evicting other jobs' live caches to make room.
+      #     # A fresh DB pull is a couple of minutes; that's cheaper than the
+      #     # eviction thrash.
+      #     cache: false
+
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, not the default shallow clone: a history-derived
+          # version is computed from tags and the commit distance since the
+          # last one, and a shallow clone can't see back far enough to find
+          # either.
+          fetch-depth: 0
+
+      # FILL: your version tool. Example using GitVersion (see GitVersion.yml
+      # at the repo root — delete both if you choose a different tool):
+      # - uses: gittools/actions/gitversion/setup@v3
+      #   with:
+      #     versionSpec: "6.x"
+      # - id: gitversion
+      #   uses: gittools/actions/gitversion/execute@v3
+      # - run: echo "computed version ${{ steps.gitversion.outputs.semVer }}"
+
+  ops-validate:
+    name: Validate ops artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download the pinned binary directly rather than a third-party
+      # "setup-actionlint" marketplace action — one fewer supply-chain link
+      # for a tool that already ships versioned, checksummed release
+      # binaries of its own. Bump this pin deliberately; check
+      # https://github.com/rhysd/actionlint/releases for current.
+      - name: Install actionlint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash | bash -s -- 1.7.12
+          echo "$PWD" >> "$GITHUB_PATH"
+
+      - name: Lint workflows
+        run: actionlint -color
+
+      # FILL: parse/validate your deployment artifacts (e.g. the compose
+      # file that ops/deploy actually run) — catch a broken deployment
+      # config before it breaks a deployment.
+      # - run: docker compose -f docker-compose.yml config --quiet

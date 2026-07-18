@@ -1,0 +1,19 @@
+# CODEOWNERS
+#
+# Maps paths to the people or teams who must review changes to them. Syntax:
+# a path pattern (gitignore-style), then one or more @username / @org/team
+# handles. Later matching lines override earlier ones, so put broad defaults
+# first and narrower overrides below them.
+#
+# Example (uncomment and edit for your org):
+# * @your-org/maintainers
+#
+# More examples of the shape once you have real owners:
+# /docs/          @your-org/docs-team
+# /ops/           @your-org/platform-team
+# *.sql           @your-org/db-reviewers
+#
+# This file only binds when branch protection requires review from code
+# owners on the paths it covers — ops/bootstrap-repo.sh configures that
+# requirement. An empty or absent CODEOWNERS with that setting on means no
+# path has an enforced owner yet; add rows as ownership becomes real.
