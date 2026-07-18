@@ -1,0 +1,117 @@
+name: Release
+
+# Practices Playbook Pillar VII — the release pipeline ships a tag that a
+# refuse-on-red preflight has already blessed; this workflow's job is to
+# build, prove, and publish exactly that artifact.
+#
+# Tag push is the trigger: `v*` matches the tags a release flow creates
+# after it has verified the branch, the tree, and every local gate.
+# workflow_dispatch is the manual escape hatch — e.g. re-running a publish
+# after a registry outage, without cutting a new tag.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# Releases queue; they never cancel each other. A single shared group name —
+# not one keyed by ref or tag — means every release run, regardless of which
+# tag triggered it, waits in one line: two releases publishing to the same
+# registry/tag namespace at once is a corruption risk, not a speed win.
+# cancel-in-progress stays false on principle: a release that's already
+# mid-publish runs to completion, success or failure, rather than getting
+# torn down half-shipped by whatever triggered next.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# packages: write is the one escalation this repo's automation needs
+# anywhere, and it's needed only here, to publish the release artifact.
+# Scope it to this workflow rather than making it the repo-wide default.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    # FILL: uncomment once the step below has a real id producing a real
+    # output — an `outputs:` map pointing at a step that doesn't exist yet
+    # is exactly the kind of red herring that's worse than an honest gap.
+    # outputs:
+    #   semver: ${{ steps.gitversion.outputs.semVer }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the version is computed from the tag this run was
+          # triggered by, plus everything git knows about how it got there.
+          # A shallow clone can't see far enough back to compute it.
+          fetch-depth: 0
+
+      # FILL: your version tool, ending by surfacing the result via
+      # ::notice — "what version is this?" should be answerable from the
+      # Actions run summary alone, with no log-diving required. Example
+      # using GitVersion (see GitVersion.yml at the repo root — delete both
+      # if you use a different tool):
+      # - uses: gittools/actions/gitversion/setup@v3
+      #   with:
+      #     versionSpec: "6.x"
+      # - id: gitversion
+      #   uses: gittools/actions/gitversion/execute@v3
+      # - run: echo "::notice title=Release version::${{ steps.gitversion.outputs.semVer }}"
+
+  build-and-publish:
+    name: Build, smoke test, and publish
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No re-review happens in this workflow, deliberately. The full gate
+      # (e2e, accessibility, container vulnerability scan, deep review)
+      # already ran and passed on the develop-to-main PR that produced this
+      # tag — see ci.yml's full-gate tier, gated on `github.base_ref ==
+      # 'main'`. Running any of that again here would just pay twice for a
+      # decision that's already been made. This workflow ships; it doesn't
+      # judge.
+
+      # FILL: build the release artifact, stamping the computed version into
+      # it at build time (not just into the registry tag). The running
+      # system must be able to answer "what exactly is running?" without an
+      # investigation — surface the version at runtime too, e.g. a health
+      # endpoint or a --version flag, so that question is one request, not
+      # a support ticket.
+      # - run: |
+      #     docker build \
+      #       --build-arg VERSION="${{ needs.version.outputs.semver }}" \
+      #       -t "app:${{ needs.version.outputs.semver }}" .
+
+      # --- Smoke test before publish. A build that succeeds but can't
+      # start, runs as root, or can't parse its own config is strictly worse
+      # than a build that fails outright — it fails *after* it reaches the
+      # registry, on someone else's clock. ---
+
+      # FILL: verify the artifact starts
+      # - run: |
+      #     docker run -d --name smoke "app:${{ needs.version.outputs.semver }}"
+      #     sleep 5
+      #     docker inspect -f '{{.State.Running}}' smoke | grep -q true
+
+      # FILL: verify it runs as a non-root user
+      # - run: |
+      #     uid="$(docker exec smoke id -u)"
+      #     test "$uid" != "0"
+
+      # FILL: verify its configuration parses
+      # - run: docker exec smoke [FILL: your config-check command]
+
+      # - run: docker rm -f smoke
+
+      # FILL: publish. Example pushing to a registry:
+      # - uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+      # - run: docker push "app:${{ needs.version.outputs.semver }}"

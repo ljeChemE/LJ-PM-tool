@@ -1,0 +1,47 @@
+# Dependabot config (Practices Playbook Pillar VII): automated update PRs
+# provide the security floor on every dependency track this repo has.
+#
+# Minor/patch updates are grouped into a single PR per ecosystem per run —
+# they're low-risk by definition (SemVer), and one PR to review beats ten
+# noisy ones. Major updates are deliberately left ungrouped: they can carry
+# breaking changes and deserve their own PR, their own CI run, and their own
+# review.
+version: 2
+
+updates:
+  # Real, works in any repo as-is: keeps this repo's own CI workflows patched.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # [FILL] Add one block per package ecosystem this project actually uses.
+  # Example shape for a pip project — copy, uncomment, and adjust the
+  # directory and grouping to your manifest layout:
+  #
+  # - package-ecosystem: "pip"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   groups:
+  #     python-minor-patch:
+  #       update-types:
+  #         - "minor"
+  #         - "patch"
+  #
+  # Example shape for an npm project:
+  #
+  # - package-ecosystem: "npm"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   groups:
+  #     npm-minor-patch:
+  #       update-types:
+  #         - "minor"
+  #         - "patch"
