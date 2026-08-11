@@ -1,4 +1,4 @@
-> Status: [FILL: draft / adopted] | Audience: anyone designing a feature or a
+> Status: adopted | Audience: anyone designing a feature or a
 > stakeholder doc | See also: [Stakeholders/_TEMPLATE.md](Stakeholders/_TEMPLATE.md)
 
 <!--
@@ -13,8 +13,13 @@ tension is the point of writing this down.
 
 ## The guiding principle
 
-> [FILL: the project's guiding principle, stated in one sentence — the
-> sentence every design decision must be defensible against.]
+> Never lose a task to friction.
+
+Capturing a task, or updating one, must never cost more than a couple of
+seconds and one deliberate action. The daily list and the weekly dashboard
+both exist to *look at* work that's already been captured cheaply — neither
+view is allowed to make capture itself slower or heavier to justify its own
+existence.
 
 Every section below, every stakeholder document, and every feature that gets
 built should trace back to this sentence. When a decision can't be defended
@@ -35,8 +40,8 @@ same three-part contract:
 
 ## The design failure test
 
-> [FILL: the failure test, in the shape of — "If the system asks more of a
-> stakeholder than it gives back, the design has failed."]
+> If capturing or updating a task ever takes more than a couple of seconds,
+> or more than one deliberate action, the design has failed.
 
 Apply this test whenever a feature adds an obligation (a field to fill, a
 step to complete, a notification to read) to any role. A feature that serves
@@ -52,5 +57,4 @@ particular — is questioned by default, not built by default.
 
 | Role | Expected awareness | Expected action | Not expected to |
 | --- | --- | --- | --- |
-| [FILL: role name] | [FILL] | [FILL] | [FILL] |
-| [FILL: role name] | [FILL] | [FILL] | [FILL] |
+| [Self](Stakeholders/Self.md) | Today's tasks, anything slipping, the week's overall shape | Capture/update tasks in a couple of seconds | Categorize, tag, or estimate beyond day + status |

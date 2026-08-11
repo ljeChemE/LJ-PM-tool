@@ -33,6 +33,7 @@ htmlcov/
 coverage/
 .coverage
 *.cover
+.pytest_cache/
 
 # --- Local data (Pillar VIII) ---------------------------------------------------
 # Real data never enters git — Playbook Pillar VIII. Exports, dumps, and

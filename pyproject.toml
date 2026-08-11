@@ -1,0 +1,17 @@
+# Root-level Python tooling config. Lives here (not under backend/) because
+# tests/ sits outside backend/ but is still backend Python code — a config
+# under backend/ wouldn't be discovered when linting or testing tests/.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+# Lets `from app.main import app` resolve the same way it does inside the
+# api container (WORKDIR /app, `app` package at the root) — one import path,
+# whether the code is running in Docker or under pytest on the host.
+pythonpath = ["backend"]
+testpaths = ["tests"]

@@ -91,7 +91,14 @@ reset:
 #
 # Run the automated test suite (all tiers).
 test:
-    @echo "not implemented — FILL: run unit + integration + e2e tiers" >&2; exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -x backend/.venv/bin/pytest ]; then
+        python3 -m venv backend/.venv
+        backend/.venv/bin/pip install --quiet --upgrade pip
+        backend/.venv/bin/pip install --quiet -r backend/requirements-dev.txt
+    fi
+    backend/.venv/bin/pytest -v
 
 # CONTRACT: run the end-to-end tier only, against a running stack, driving
 # the real UI. One scenario per critical stakeholder workflow.

@@ -1,4 +1,4 @@
-> Status: [FILL: draft / adopted] | Audience: anyone writing or reviewing a
+> Status: adopted | Audience: anyone writing or reviewing a
 > change | See also: [Getting-Started.md](Getting-Started.md)
 
 # Testing

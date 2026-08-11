@@ -3,3 +3,8 @@
 # Pinned to match the ruff hook `rev` in .pre-commit-config.yaml — bump both
 # together (Playbook Pillar VI's PIN RULE).
 ruff==0.16.2
+
+# Test runner + the HTTP client FastAPI's TestClient needs under the hood.
+pytest==8.3.4
+httpx==0.28.1
+
