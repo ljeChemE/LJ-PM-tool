@@ -21,12 +21,12 @@ Desktop.ini
 *~
 
 # --- Dependency + build output -------------------------------------------------
-# FILL: your language's dependency and build directories, e.g.:
-#   node_modules/
-#   .venv/
-#   dist/
-#   build/
-#   target/
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+dist/
+build/
 
 # --- Test / coverage output ----------------------------------------------------
 htmlcov/

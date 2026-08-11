@@ -30,7 +30,25 @@ default:
 #
 # Bootstrap a ready-to-use dev environment (idempotent): env, services, schema, seed.
 dev:
-    @echo "not implemented — FILL: env→services→schema→seed→print URLs" >&2; exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f .env ]; then
+        cp .env.example .env
+        echo "Created .env from .env.example — fill in POSTGRES_PASSWORD before continuing:" >&2
+        echo "  openssl rand -hex 16" >&2
+        exit 1
+    fi
+    just up
+    echo "Waiting for the API to become healthy..." >&2
+    for i in $(seq 1 30); do
+        if just health >/dev/null 2>&1; then
+            just health
+            exit 0
+        fi
+        sleep 1
+    done
+    echo "API never became healthy — check \`docker compose logs\`." >&2
+    exit 1
 
 # CONTRACT: start the already-configured services in the background without
 # touching schema or seed data. The lighter sibling of `dev` — use after the
@@ -38,14 +56,14 @@ dev:
 #
 # Start the configured services in the background (no schema/seed steps).
 up:
-    @echo "not implemented — FILL: start services, no schema/seed steps" >&2; exit 1
+    docker compose up -d --build
 
 # CONTRACT: stop the services started by `up`/`dev` without destroying their
 # data volumes. Safe, non-destructive — the inverse of `up`, not of `reset`.
 #
 # Stop services, preserving data volumes.
 down:
-    @echo "not implemented — FILL: stop services, preserve data volumes" >&2; exit 1
+    docker compose down
 
 # CONTRACT: destructive. Tears down the environment — services, volumes,
 # local state — and rebuilds it from scratch via `dev`. Must ask for a typed
@@ -63,8 +81,8 @@ reset:
         echo "Aborted — no changes made." >&2
         exit 1
     fi
-    echo "not implemented — FILL: drop services + volumes, then invoke \`just dev\`" >&2
-    exit 1
+    docker compose down --volumes
+    just dev
 
 # CONTRACT: run the full automated test suite — every tier (unit,
 # integration, e2e) unless your stack's test runner supports narrowing to one
@@ -118,7 +136,10 @@ migrate:
 #
 # Hit the health endpoint and pretty-print the response.
 health:
-    @echo "not implemented — FILL: curl the health endpoint, pretty-print JSON" >&2; exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source .env
+    curl -sf "http://localhost:${API_PORT:-8000}/health" | jq .
 
 # CONTRACT: print the current SemVer, computed from git history (tags,
 # branch, distance) — never hand-edited. This is the number every release

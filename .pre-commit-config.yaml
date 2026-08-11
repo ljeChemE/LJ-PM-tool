@@ -37,14 +37,18 @@ repos:
   # match your lockfile, per the PIN RULE above.
   # ---------------------------------------------------------------------------
 
-  # EXAMPLE for a Python project using ruff (formatter + linter in one tool):
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #   rev: v0.8.0  # FILL: match the ruff version pinned in your lockfile
-  #   hooks:
-  #     - id: ruff
-  #       args: [--fix]
-  #     - id: ruff-format
+  # Python (backend/): ruff as formatter + linter in one tool. rev pinned to
+  # match backend/requirements-dev.txt exactly (PIN RULE above).
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.2
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
 
+  # JS/TS (frontend/): not added yet — frontend/ doesn't exist. Uncomment
+  # this, pin `rev` to frontend/package.json's versions, and delete this
+  # comment once the frontend is scaffolded.
   # EXAMPLE for a JS/TS project using eslint + prettier:
   # - repo: https://github.com/pre-commit/mirrors-eslint
   #   rev: v9.15.0  # FILL: match the eslint version pinned in your lockfile

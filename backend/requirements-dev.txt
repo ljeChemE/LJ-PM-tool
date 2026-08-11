@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Pinned to match the ruff hook `rev` in .pre-commit-config.yaml — bump both
+# together (Playbook Pillar VI's PIN RULE).
+ruff==0.16.2
