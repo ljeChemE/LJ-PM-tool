@@ -42,7 +42,7 @@ jobs:
     # outputs:
     #   semver: ${{ steps.gitversion.outputs.semVer }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Full history: the version is computed from the tag this run was
           # triggered by, plus everything git knows about how it got there.
@@ -66,7 +66,7 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # No re-review happens in this workflow, deliberately. The full gate
       # (e2e, accessibility, container vulnerability scan, deep review)
