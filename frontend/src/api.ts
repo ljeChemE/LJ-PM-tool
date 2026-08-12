@@ -29,11 +29,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   getProjects: () => request<Project[]>("/projects"),
-  createProject: (name: string) =>
-    request<Project>("/projects", {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    }),
 
   getTodaysTasks: () => request<Task[]>("/tasks/today"),
   createTask: (payload: {

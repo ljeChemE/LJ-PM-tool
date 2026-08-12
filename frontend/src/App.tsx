@@ -8,7 +8,6 @@ function App() {
   const [title, setTitle] = useState("");
   const [projectId, setProjectId] = useState<number | "">("");
   const [deadline, setDeadline] = useState("");
-  const [newProjectName, setNewProjectName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const projectsById = new Map(projects.map((p) => [p.id, p.name]));
@@ -43,18 +42,6 @@ function App() {
     }
   }
 
-  async function handleAddProject(e: FormEvent) {
-    e.preventDefault();
-    if (!newProjectName.trim()) return;
-    try {
-      await api.createProject(newProjectName.trim());
-      setNewProjectName("");
-      await refreshProjects();
-    } catch (err: unknown) {
-      setError(String(err));
-    }
-  }
-
   async function toggleDone(task: Task) {
     try {
       await api.updateTask(task.id, { done: !task.done });
@@ -68,16 +55,6 @@ function App() {
     <main>
       <h1>Today</h1>
       {error && <p className="error">{error}</p>}
-
-      <form onSubmit={handleAddProject} className="inline-form">
-        <input
-          value={newProjectName}
-          onChange={(e) => setNewProjectName(e.target.value)}
-          placeholder="New project name"
-          autoComplete="off"
-        />
-        <button type="submit">Add project</button>
-      </form>
 
       <form onSubmit={handleAddTask} className="inline-form">
         <input
