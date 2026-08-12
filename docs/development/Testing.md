@@ -46,7 +46,7 @@ change.** A crash is cheap to notice; a wrong number is not.
 
 | Suite | What it protects |
 | --- | --- |
-| [FILL: list your guardian suites here] | [FILL: the computation it guards] |
+| `tests/integration/test_task_rollover_guardian.py` | The daily-task rollover rule (an incomplete task's deadline auto-advances to today, incrementing `carried_over_count`, until it's done) |
 
 ## Determinism
 

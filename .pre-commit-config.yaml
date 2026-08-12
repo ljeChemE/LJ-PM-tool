@@ -59,27 +59,20 @@ repos:
   #   hooks:
   #     - id: prettier
 
-  # ---------------------------------------------------------------------------
-  # FILL: schema-drift hook — the same "models and migrations disagree" check
-  # CI's schema-drift job runs (see ci.yml), but at commit time, before the
-  # drift ever leaves your machine. Uncomment and fill in the real command.
-  # ---------------------------------------------------------------------------
-  # - repo: local
-  #   hooks:
-  #     - id: schema-drift
-  #       name: Schema drift check
-  #       # language: system runs whatever's already on the machine (or dev
-  #       # container) rather than making pre-commit manage a toolchain for a
-  #       # single local check.
-  #       language: system
-  #       # FILL: your framework's "models match migrations" check, e.g.
-  #       #   just schema-drift
-  #       # or run directly rather than through the task runner:
-  #       #   python manage.py makemigrations --check --dry-run
-  #       entry: "[FILL: your framework's 'models match migrations' check]"
-  #       pass_filenames: false
-  #       # If the dev stack (containers, local services) is down, this check
-  #       # has nothing to check against. Let it skip cleanly rather than
-  #       # fail the commit on an environment problem unrelated to the diff —
-  #       # CI catches real drift regardless, against a stack that's
-  #       # guaranteed to be up.
+  # Schema-drift hook — the same "models and migrations disagree" check CI
+  # will run, but at commit time, before the drift ever leaves your machine.
+  - repo: local
+    hooks:
+      - id: schema-drift
+        name: Schema drift check
+        # language: system runs whatever's already on the machine (the dev
+        # container, via `just`) rather than making pre-commit manage a
+        # toolchain for a single local check.
+        language: system
+        entry: just schema-drift
+        pass_filenames: false
+        files: ^backend/(app|alembic)/
+        # If the dev stack is down, `just schema-drift` skips cleanly rather
+        # than failing the commit on an environment problem unrelated to the
+        # diff — CI catches real drift regardless, against a stack that's
+        # guaranteed to be up.

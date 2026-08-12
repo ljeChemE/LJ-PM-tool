@@ -42,6 +42,7 @@ dev:
     echo "Waiting for the API to become healthy..." >&2
     for i in $(seq 1 30); do
         if just health >/dev/null 2>&1; then
+            just migrate
             just health
             exit 0
         fi
@@ -135,7 +136,22 @@ typecheck:
 #
 # Apply pending schema migrations (no-op when already up to date).
 migrate:
-    @echo "not implemented — FILL: apply pending schema migrations" >&2; exit 1
+    docker compose exec -T api alembic upgrade head
+
+# CONTRACT: compare SQLAlchemy models against the real dev database and fail
+# if they disagree — the same drift CI checks, but at commit time. Skips
+# cleanly (exit 0) if the dev stack isn't running; that's an environment
+# problem, not evidence of drift.
+#
+# Check that models and migrations agree (skips cleanly if the stack is down).
+schema-drift:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! docker compose ps --status running --services 2>/dev/null | grep -qx api; then
+        echo "dev stack not running — skipping schema-drift check" >&2
+        exit 0
+    fi
+    docker compose exec -T api alembic check
 
 # CONTRACT: hit the running app's health endpoint and pretty-print the
 # response (status, version, dependency checks). Read-only; exits non-zero if
