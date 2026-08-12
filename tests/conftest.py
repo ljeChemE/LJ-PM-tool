@@ -37,11 +37,12 @@ admin_conn.close()
 
 os.environ["DATABASE_URL"] = f"postgresql+psycopg://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/{_TEST_DB}"
 
-subprocess.run(
-    [str(BACKEND_DIR / ".venv" / "bin" / "alembic"), "upgrade", "head"],
-    cwd=BACKEND_DIR,
-    check=True,
-)
+# Prefer the local dev venv's alembic; fall back to whatever's on PATH (CI
+# installs dependencies directly into the runner, with no venv at all).
+_venv_alembic = BACKEND_DIR / ".venv" / "bin" / "alembic"
+_alembic_bin = str(_venv_alembic) if _venv_alembic.exists() else "alembic"
+
+subprocess.run([_alembic_bin, "upgrade", "head"], cwd=BACKEND_DIR, check=True)
 
 _engine = create_engine(os.environ["DATABASE_URL"])
 

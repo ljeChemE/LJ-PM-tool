@@ -1,21 +1,24 @@
 name: CI
 
-# Practices Playbook Pillar VI — CI is tiered by risk and cost, and it
-# triggers on pull requests, not pushes, so no minutes are spent twice.
+# Practices Playbook Pillar VI — CI is tiered by risk and cost.
 #
-# Deliberately no `push:` trigger: a branch with an open PR fires the
-# `pull_request` event on every push to it already; adding a `push:` trigger
-# would run this entire matrix a second time for the same commit. A branch
-# with no open PR yet has nothing worth gating (nobody is about to merge it),
-# so it correctly spends zero minutes either way. `workflow_dispatch` is the
-# escape hatch for re-running the gate without pushing an empty commit.
+# DEVIATION FROM THE KIT'S DEFAULT: the template this file started from
+# triggers on `pull_request` only, assuming every change lands via a
+# develop-to-main PR flow with branch protection. This is a solo project
+# with no second reviewer to satisfy a required-approval rule, so branch
+# protection is deliberately not enabled (see ops/bootstrap-repo.sh) and
+# every commit lands directly on `main`. `push` is therefore the only event
+# that actually happens here — `pull_request` is left in for the day this
+# project gets a second contributor and a real PR flow starts making sense.
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
-# One in-flight run per ref. A new push to the same PR makes the previous
-# run's result moot before it finishes, so cancel it rather than let two runs
-# race for the same status checks.
+# One in-flight run per ref. A new push to the same branch makes the
+# previous run's result moot before it finishes, so cancel it rather than
+# let two runs race for the same status.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -27,9 +30,9 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # FAST TIER — every PR, every push to a PR. Minutes-not-hours by design:
-  # lint, types, drift, unit, integration. This is the tier a contributor
-  # waits on, so it stays cheap on purpose.
+  # FAST TIER — every push to main. Minutes-not-hours by design: lint, types,
+  # drift, integration. This is the tier a contributor waits on, so it stays
+  # cheap on purpose.
   # ---------------------------------------------------------------------------
 
   lint:
@@ -37,174 +40,151 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # FILL: install your toolchain (pinned via lockfile)
-      # - uses: actions/setup-node@v4
-      #   with:
-      #     node-version-file: ".nvmrc"
-      #     cache: "npm"
-      # - run: npm ci
-
-      # FILL: run the check (e.g. the same command as 'just lint')
-      # - run: just lint
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r backend/requirements-dev.txt
+      - run: ruff check .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefix frontend
+      - run: npm run --prefix frontend lint
 
   typecheck:
     name: Type check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # FILL: install your toolchain (pinned via lockfile)
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version-file: ".python-version"
-      # - run: pip install -r requirements-lock.txt
-
-      # FILL: run the check (e.g. the same command as 'just typecheck')
-      # - run: just typecheck
+      # No backend type checker yet (mypy or similar) — same gap noted in
+      # the justfile's typecheck recipe; add both together the day one lands.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefix frontend
+      - run: npm run --prefix frontend typecheck
 
   schema-drift:
     name: Schema drift
     runs-on: ubuntu-latest
+    services:
+      # Real engine, production major version (Playbook Pillar IV) — a
+      # fresh, disposable instance per run, not the dev database.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U app"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/app
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r backend/requirements-dev.txt
+      - run: alembic upgrade head
+        working-directory: backend
+      - run: alembic check
+        working-directory: backend
 
-      # FILL: install your toolchain (pinned via lockfile)
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version-file: ".python-version"
-      # - run: pip install -r requirements-lock.txt
-
-      # FILL: run the check (e.g. the same command as 'just schema-drift').
-      # This must fail the build the moment committed migrations and the
-      # model definitions they were generated from disagree — that's the
-      # whole point of the check (Playbook Pillar IV).
-      # - run: just schema-drift
-
-  unit-tests:
-    name: Unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # FILL: install your toolchain (pinned via lockfile)
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version-file: ".python-version"
-      # - run: pip install -r requirements-lock.txt
-
-      # FILL: run the check (e.g. the same command as 'just test unit')
-      # - run: just test unit
+  # No unit-tests job yet — tests/unit/ is empty (everything so far is an
+  # integration test against the real database). Add this job the day the
+  # first pure-logic unit test lands; until then it would just be `pytest`
+  # exiting non-zero for "collected 0 items," a false red for no reason.
 
   integration-tests:
     name: Integration tests
     runs-on: ubuntu-latest
-
-    # Run the real engine at the production major version — substitutes let
-    # schema changes lie (Playbook Pillar IV). Uncomment, pin the image tag
-    # to your actual production major version, and match the env vars your
-    # app expects for a connection string.
-    # services:
-    #   datastore:
-    #     image: postgres:16
-    #     env:
-    #       POSTGRES_USER: app
-    #       POSTGRES_PASSWORD: app
-    #       POSTGRES_DB: app_test
-    #     ports:
-    #       - 5432:5432
-    #     options: >-
-    #       --health-cmd="pg_isready -U app"
-    #       --health-interval=10s
-    #       --health-timeout=5s
-    #       --health-retries=5
-
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U app"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     steps:
       - uses: actions/checkout@v4
-
-      # FILL: install your toolchain (pinned via lockfile)
-      # - uses: actions/setup-python@v5
-      #   with:
-      #     python-version-file: ".python-version"
-      # - run: pip install -r requirements-lock.txt
-
-      # FILL: run the check (e.g. the same command as 'just test integration')
-      # - run: just test integration
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r backend/requirements-dev.txt
+      - name: Write .env for the test suite's conftest
+        run: |
+          cat <<EOF > .env
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=app
+          POSTGRES_DB=app
+          POSTGRES_PORT=5432
+          EOF
+      - run: pytest
 
   # ---------------------------------------------------------------------------
-  # FULL GATE — only on workflow_dispatch, or a PR whose base is `main` (i.e.
-  # the develop-to-main release PR). This is the tiering economics: e2e
-  # browsers, a fresh image build, and a vulnerability-DB pull are each
-  # minutes on their own, and every feature/fix/docs PR merges into `develop`,
-  # not `main` — paying that cost on every one of those PRs would make CI the
-  # thing people route around. Pay it once, at the door production walks
-  # through.
+  # FULL GATE — only on workflow_dispatch or a push to main. There's no
+  # separate integration branch here (see the trigger comment above), so
+  # "the door production walks through" is just every push to main.
   # ---------------------------------------------------------------------------
 
-  e2e-tests:
-    name: End-to-end tests
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main'
-    steps:
-      - uses: actions/checkout@v4
-
-      # FILL: install your toolchain and start the stack under test
-      # - run: just up
-
-      # FILL: run the end-to-end suite (e.g. the same command as 'just e2e').
-      # If there is a UI, run accessibility checks (axe or equivalent) as
-      # part of this job, against the real built stylesheet — a11y is a gate
-      # here, not a suggestion (Playbook Pillar IV).
-      # - run: just e2e
+  # No e2e-tests job yet — tests/e2e/ is empty and `just e2e` is still a
+  # stub. Add this job in the same change that gives it something real to
+  # run; a11y checks (axe or equivalent) belong in it once there's a UI
+  # worth checking.
 
   vuln-scan:
     name: Vulnerability scan
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
-      # FILL: build the production artifact — the same image/package you'd
-      # actually publish, not a lighter dev variant. Scanning anything else
-      # answers a question nobody asked.
-      # - run: docker build -t app:scan .
-
-      # FILL: scan it. Example using Trivy against a container image:
-      # - uses: aquasecurity/trivy-action@0.28.0
-      #   with:
-      #     image-ref: "app:scan"
-      #     severity: "HIGH,CRITICAL"
-      #     exit-code: "1"
-      #     ignore-unfixed: true
-      #     # Cache disabled deliberately: Trivy's vulnerability-DB cache is
-      #     # keyed per-ref by default, so every branch/PR would write its
-      #     # own DB snapshot into the shared Actions cache — that blows
-      #     # through the repo's 10 GB cache cap fast, and LRU eviction at
-      #     # the cap starts evicting other jobs' live caches to make room.
-      #     # A fresh DB pull is a couple of minutes; that's cheaper than the
-      #     # eviction thrash.
-      #     cache: false
-
-  version:
-    name: Compute version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - run: docker build -t api:scan ./backend
+      - name: Scan api image
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          # Full history, not the default shallow clone: a history-derived
-          # version is computed from tags and the commit distance since the
-          # last one, and a shallow clone can't see back far enough to find
-          # either.
-          fetch-depth: 0
+          image-ref: "api:scan"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          # Cache disabled deliberately: Trivy's vulnerability-DB cache is
+          # keyed per-ref by default, so every branch would write its own DB
+          # snapshot into the shared Actions cache — that blows through the
+          # repo's 10 GB cache cap fast, and LRU eviction at the cap starts
+          # evicting other jobs' live caches to make room. A fresh DB pull is
+          # a couple of minutes; that's cheaper than the eviction thrash.
+          cache: false
 
-      # FILL: your version tool. Example using GitVersion (see GitVersion.yml
-      # at the repo root — delete both if you choose a different tool):
-      # - uses: gittools/actions/gitversion/setup@v3
-      #   with:
-      #     versionSpec: "6.x"
-      # - id: gitversion
-      #   uses: gittools/actions/gitversion/execute@v3
-      # - run: echo "computed version ${{ steps.gitversion.outputs.semVer }}"
+      - run: docker build -t web:scan ./frontend
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "web:scan"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+          ignore-unfixed: true
+          cache: false
+
+  # No version job yet — this project doesn't have a version-computing tool
+  # wired up (GitVersion.yml exists but is unconnected). That's Pillar VII
+  # (releases), a deliberately separate step from CI.
 
   ops-validate:
     name: Validate ops artifacts
@@ -225,7 +205,5 @@ jobs:
       - name: Lint workflows
         run: actionlint -color
 
-      # FILL: parse/validate your deployment artifacts (e.g. the compose
-      # file that ops/deploy actually run) — catch a broken deployment
-      # config before it breaks a deployment.
-      # - run: docker compose -f docker-compose.yml config --quiet
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker-compose.yml config --quiet
