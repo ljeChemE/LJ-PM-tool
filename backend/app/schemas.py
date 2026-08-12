@@ -1,6 +1,10 @@
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
+
+ProjectStatus = Literal["in_progress", "completed"]
+TaskStatus = Literal["todo", "in_progress", "done"]
 
 
 class ProjectCreate(BaseModel):
@@ -12,6 +16,7 @@ class ProjectOut(BaseModel):
 
     id: int
     name: str
+    status: ProjectStatus
 
 
 class TaskCreate(BaseModel):
@@ -23,7 +28,7 @@ class TaskCreate(BaseModel):
 class TaskUpdate(BaseModel):
     title: str | None = None
     deadline: date | None = None
-    done: bool | None = None
+    status: TaskStatus | None = None
 
 
 class TaskOut(BaseModel):
@@ -33,5 +38,5 @@ class TaskOut(BaseModel):
     title: str
     project_id: int
     deadline: date
-    done: bool
+    status: TaskStatus
     carried_over_count: int

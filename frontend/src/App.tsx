@@ -1,133 +1,33 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { api, type Project, type Task } from "./api";
+import { NavLink, Route, Routes } from "react-router-dom";
 import "./App.css";
+import DashboardView from "./DashboardView";
+import ProjectPage from "./ProjectPage";
+import TodayView from "./TodayView";
 
 function App() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [title, setTitle] = useState("");
-  const [projectId, setProjectId] = useState<number | "">("");
-  const [deadline, setDeadline] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const projectsById = new Map(projects.map((p) => [p.id, p.name]));
-
-  async function refreshTasks() {
-    setTasks(await api.getTodaysTasks());
-  }
-
-  async function refreshProjects() {
-    setProjects(await api.getProjects());
-  }
-
-  useEffect(() => {
-    refreshProjects().catch((e: unknown) => setError(String(e)));
-    refreshTasks().catch((e: unknown) => setError(String(e)));
-  }, []);
-
-  async function handleAddTask(e: FormEvent) {
-    e.preventDefault();
-    if (!title.trim() || projectId === "") return;
-    try {
-      await api.createTask({
-        title: title.trim(),
-        project_id: projectId,
-        deadline: deadline || undefined,
-      });
-      setTitle("");
-      setDeadline("");
-      await refreshTasks();
-    } catch (err: unknown) {
-      setError(String(err));
-    }
-  }
-
-  async function toggleDone(task: Task) {
-    try {
-      await api.updateTask(task.id, { done: !task.done });
-      await refreshTasks();
-    } catch (err: unknown) {
-      setError(String(err));
-    }
-  }
-
   return (
     <main>
-      <h1>Today</h1>
-      {error && <p className="error">{error}</p>}
-
-      <form onSubmit={handleAddTask} className="inline-form">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Task title"
-          autoComplete="off"
-        />
-        <select
-          value={projectId}
-          onChange={(e) =>
-            setProjectId(e.target.value ? Number(e.target.value) : "")
-          }
+      <nav className="view-nav">
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) => (isActive ? "active" : undefined)}
         >
-          <option value="">#project</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              #{p.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="date"
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
-        />
-        <button type="submit">Add task</button>
-      </form>
+          Today
+        </NavLink>
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) => (isActive ? "active" : undefined)}
+        >
+          Dashboard
+        </NavLink>
+      </nav>
 
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Task</th>
-            <th>Project</th>
-            <th>Deadline</th>
-            <th>Done</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((task) => (
-            <tr key={task.id} className={task.done ? "done" : undefined}>
-              <td>{task.id}</td>
-              <td>
-                {task.title}
-                {task.carried_over_count > 0 && (
-                  <span
-                    className="carried-over"
-                    title={`Carried over ${task.carried_over_count}x`}
-                  >
-                    {" "}
-                    ↻{task.carried_over_count}
-                  </span>
-                )}
-              </td>
-              <td>#{projectsById.get(task.project_id) ?? "?"}</td>
-              <td>{task.deadline}</td>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={task.done}
-                  onChange={() => toggleDone(task)}
-                />
-              </td>
-            </tr>
-          ))}
-          {tasks.length === 0 && (
-            <tr>
-              <td colSpan={5}>Nothing on today&apos;s list.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Routes>
+        <Route path="/" element={<TodayView />} />
+        <Route path="/dashboard" element={<DashboardView />} />
+        <Route path="/projects/:projectId" element={<ProjectPage />} />
+      </Routes>
     </main>
   );
 }

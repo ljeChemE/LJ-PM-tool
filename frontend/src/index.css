@@ -1,8 +1,9 @@
 :root {
-  font-family: system-ui, sans-serif;
-  color-scheme: light dark;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
 }
 
 body {
   margin: 0;
+  background: #eef2e3;
+  color: #2f3a24;
 }

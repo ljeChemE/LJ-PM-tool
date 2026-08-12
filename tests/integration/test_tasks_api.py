@@ -20,7 +20,7 @@ def test_create_task_defaults_deadline_to_today():
         assert response.status_code == 201
         body = response.json()
         assert body["deadline"] == "2026-06-15"
-        assert body["done"] is False
+        assert body["status"] == "todo"
         assert body["carried_over_count"] == 0
     finally:
         app.dependency_overrides.pop(today, None)
@@ -39,10 +39,10 @@ def test_patch_marks_task_done():
         json={"title": "Write report", "project_id": project["id"], "deadline": "2026-07-01"},
     ).json()
 
-    response = client.patch(f"/tasks/{task['id']}", json={"done": True})
+    response = client.patch(f"/tasks/{task['id']}", json={"status": "done"})
 
     assert response.status_code == 200
-    assert response.json()["done"] is True
+    assert response.json()["status"] == "done"
 
 
 def test_list_tasks_for_a_specific_day():

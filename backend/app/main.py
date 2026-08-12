@@ -76,7 +76,7 @@ def list_todays_tasks(
     # means: it happens the moment today's list is asked for.
     db.execute(
         update(Task)
-        .where(Task.deadline < current_today, Task.done.is_(False))
+        .where(Task.deadline < current_today, Task.status != "done")
         .values(
             deadline=current_today,
             carried_over_count=Task.carried_over_count + 1,
@@ -90,6 +90,16 @@ def list_todays_tasks(
 @app.get("/tasks", response_model=list[TaskOut])
 def list_tasks_for_day(day: date, db: Session = Depends(get_db)) -> list[Task]:
     return list(db.scalars(select(Task).where(Task.deadline == day)).all())
+
+
+@app.get("/projects/{project_id}/tasks", response_model=list[TaskOut])
+def list_tasks_for_project(project_id: int, db: Session = Depends(get_db)) -> list[Task]:
+    """Every task ever created for this project, any day, any status — the
+    full-history view a kanban board needs, as opposed to /tasks/today's
+    single-day, rollover-applying view."""
+    if db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="project not found")
+    return list(db.scalars(select(Task).where(Task.project_id == project_id)).all())
 
 
 @app.patch("/tasks/{task_id}", response_model=TaskOut)

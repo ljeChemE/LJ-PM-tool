@@ -1,9 +1,44 @@
 main {
-  max-width: 720px;
+  max-width: 1200px;
   margin: 2rem auto;
   padding: 0 1rem;
-  font-family: system-ui, sans-serif;
 }
+
+h1,
+h2,
+h3,
+h4 {
+  color: #3f5f2a;
+}
+
+/* --- Nav ------------------------------------------------------------- */
+
+.view-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #c9d6b5;
+  padding-bottom: 0.5rem;
+}
+
+.view-nav a {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  color: #3f5f2a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.view-nav a:hover {
+  background: #dce8c9;
+}
+
+.view-nav a.active {
+  background: #5c8a3f;
+  color: #f5f8ee;
+}
+
+/* --- Today view forms + table ----------------------------------------- */
 
 .inline-form {
   display: flex;
@@ -12,32 +47,172 @@ main {
 }
 
 .inline-form input,
-.inline-form select {
+.inline-form select,
+select {
   padding: 0.4rem;
+  border: 1px solid #b7c79c;
+  border-radius: 4px;
+  background: #fbfbf5;
+  color: #2f3a24;
+}
+
+.inline-form button,
+button {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 4px;
+  background: #5c8a3f;
+  color: #f5f8ee;
+  cursor: pointer;
+}
+
+.inline-form button:hover,
+button:hover {
+  background: #4a7530;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  background: #fbfbf5;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 th,
 td {
   text-align: left;
-  padding: 0.5rem;
-  border-bottom: 1px solid #ddd;
+  padding: 0.6rem;
+  border-bottom: 1px solid #dce8c9;
+}
+
+th {
+  background: #dce8c9;
 }
 
 tr.done td {
-  color: #888;
+  color: #8a8f7a;
   text-decoration: line-through;
 }
 
 .carried-over {
-  color: #b45309;
+  color: #a3690f;
   font-size: 0.85em;
 }
 
 .error {
   color: #b91c1c;
+}
+
+/* --- Dashboard overview: horizontal project row ------------------------ */
+
+.project-row {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.project-column {
+  display: block;
+  flex: 0 0 200px;
+  background: #f5f8ee;
+  border: 1px solid #c9d6b5;
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease;
+}
+
+.project-column:hover {
+  box-shadow: 0 2px 8px rgba(63, 95, 42, 0.25);
+  border-color: #5c8a3f;
+}
+
+.project-column h3 {
+  margin: 0 0 0.5rem;
+}
+
+.project-row.completed .project-column {
+  background: #eee9dc;
+  border-color: #d8cdb0;
+}
+
+.project-preview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+.project-preview-list li {
+  padding: 0.15rem 0;
+}
+
+.project-preview-list li.done {
+  color: #8a8f7a;
+  text-decoration: line-through;
+}
+
+.project-preview-list li.empty {
+  color: #8a8f7a;
+  font-style: italic;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 1em;
+}
+
+/* --- Project page: full kanban board ----------------------------------- */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #4a7530;
+}
+
+.project-status {
+  display: inline-block;
+  background: #dce8c9;
+  color: #3f5f2a;
+  border-radius: 999px;
+  padding: 0.15rem 0.75rem;
+  font-size: 0.85em;
+  text-transform: capitalize;
+  margin: -0.5rem 0 1.5rem;
+}
+
+.kanban-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.kanban-column {
+  background: #e4ecd6;
+  border-radius: 6px;
+  padding: 0.5rem;
+  min-height: 3rem;
+}
+
+.kanban-column h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  color: #5c7a45;
+}
+
+.kanban-card {
+  background: #fbfbf5;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid #5c8a3f;
+}
+
+.kanban-card p {
+  margin: 0 0 0.4rem;
 }

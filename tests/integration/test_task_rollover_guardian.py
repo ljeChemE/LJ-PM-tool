@@ -41,7 +41,7 @@ def test_incomplete_task_rolls_forward_to_todays_standup_until_done():
         assert rolled["deadline"] == "2026-01-02"
         assert rolled["carried_over_count"] == 1
 
-        client.patch(f"/tasks/{task['id']}", json={"done": True})
+        client.patch(f"/tasks/{task['id']}", json={"status": "done"})
 
         client = _client_on(day_three)
         assert client.get("/tasks/today").json() == []
@@ -116,7 +116,7 @@ def test_done_task_on_a_past_day_never_rolls_forward_even_once():
         task = client.post(
             "/tasks", json={"title": "Done already", "project_id": project_id}
         ).json()
-        client.patch(f"/tasks/{task['id']}", json={"done": True})
+        client.patch(f"/tasks/{task['id']}", json={"status": "done"})
 
         client = _client_on(day_two)
         assert client.get("/tasks/today").json() == []
