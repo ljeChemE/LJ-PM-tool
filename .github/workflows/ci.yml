@@ -172,15 +172,13 @@ jobs:
           # a couple of minutes; that's cheaper than the eviction thrash.
           cache: false
 
-      - run: docker build -t web:scan ./frontend
-      - name: Scan web image
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: "web:scan"
-          severity: "HIGH,CRITICAL"
-          exit-code: "1"
-          ignore-unfixed: true
-          cache: false
+      # frontend/Dockerfile builds a DEV image (runs `npm run dev`, installs
+      # every devDependency — vite, npm's own tooling, all of it). Scanning
+      # it flags CVEs in build-time tooling that never ships anywhere, which
+      # the Playbook calls out directly: "scanning anything else answers a
+      # question nobody asked." Add this back once frontend/ has a real
+      # production build (a multi-stage Dockerfile serving the built static
+      # files) — that artifact is the one worth scanning.
 
   # No version job yet — this project doesn't have a version-computing tool
   # wired up (GitVersion.yml exists but is unconnected). That's Pillar VII

@@ -1,4 +1,6 @@
-fastapi==0.115.0
+fastapi==0.141.1
+starlette==1.6.0  # pinned explicitly: fastapi's own range would allow one
+                  # with known CVEs (see vuln-scan job) back in transitively
 uvicorn[standard]==0.32.0
 psycopg[binary]==3.2.3
 sqlalchemy==2.0.36
