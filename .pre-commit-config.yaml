@@ -46,18 +46,23 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  # JS/TS (frontend/): not added yet — frontend/ doesn't exist. Uncomment
-  # this, pin `rev` to frontend/package.json's versions, and delete this
-  # comment once the frontend is scaffolded.
-  # EXAMPLE for a JS/TS project using eslint + prettier:
-  # - repo: https://github.com/pre-commit/mirrors-eslint
-  #   rev: v9.15.0  # FILL: match the eslint version pinned in your lockfile
-  #   hooks:
-  #     - id: eslint
-  # - repo: https://github.com/pre-commit/mirrors-prettier
-  #   rev: v3.3.3  # FILL: match the prettier version pinned in your lockfile
-  #   hooks:
-  #     - id: prettier
+  # JS/TS (frontend/): this Vite template ships oxlint + prettier, not
+  # eslint — local hooks calling the exact versions pinned in
+  # frontend/package.json (PIN RULE above), same pattern as schema-drift.
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend lint (oxlint)
+        language: system
+        entry: bash -c 'cd frontend && npm run --silent lint'
+        pass_filenames: false
+        files: ^frontend/
+      - id: frontend-format
+        name: Frontend format (prettier --write)
+        language: system
+        entry: bash -c 'cd frontend && npm run --silent format'
+        pass_filenames: false
+        files: ^frontend/
 
   # Schema-drift hook — the same "models and migrations disagree" check CI
   # will run, but at commit time, before the drift ever leaves your machine.

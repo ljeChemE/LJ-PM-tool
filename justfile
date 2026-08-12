@@ -113,7 +113,10 @@ e2e:
 #
 # Static analysis, check-only — never mutates files.
 lint:
-    @echo "not implemented — FILL: run the linter in check-only mode" >&2; exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    backend/.venv/bin/ruff check .
+    (cd frontend && npm run --silent lint)
 
 # CONTRACT: auto-format the codebase in place. Idempotent — running it twice
 # in a row produces no further diff. Pairs with the pre-commit hook so local
@@ -121,14 +124,21 @@ lint:
 #
 # Auto-format the codebase in place (idempotent).
 fmt:
-    @echo "not implemented — FILL: run the formatter, writing changes" >&2; exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    backend/.venv/bin/ruff format .
+    (cd frontend && npm run --silent format)
 
 # CONTRACT: static type checking only. Read-only, like `lint` — reports, does
 # not fix.
 #
 # Static type checking, check-only.
 typecheck:
-    @echo "not implemented — FILL: run the type checker in check-only mode" >&2; exit 1
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Backend: no type checker installed yet (mypy or similar) — add one and
+    # a line here the day a bug slips through that it would have caught.
+    (cd frontend && npm run --silent typecheck)
 
 # CONTRACT: apply any pending schema migrations to the datastore this
 # environment points at. Must be safe to run against a datastore that is

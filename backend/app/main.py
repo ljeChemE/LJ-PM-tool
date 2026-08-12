@@ -1,6 +1,8 @@
+import os
 from datetime import date
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, text, update
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,13 @@ from app.models import Project, Task
 from app.schemas import ProjectCreate, ProjectOut, TaskCreate, TaskOut, TaskUpdate
 
 app = FastAPI(title="PM Tool API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.environ.get("FRONTEND_URL", "http://localhost:5173")],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")

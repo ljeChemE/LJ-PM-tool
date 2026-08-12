@@ -8,8 +8,8 @@
 
 Install on the host: Docker Desktop (container runtime), `just` (task
 runner) — `brew install --cask docker && brew install just` on a Mac.
-Nothing else touches the host; the backend's actual toolchain (Python,
-FastAPI, Postgres client libs) lives in the `api` container.
+Nothing else touches the host; the actual toolchains (Python/FastAPI in
+`api`, Node/React in `web`) live inside their containers.
 
 ## Quick start
 
@@ -34,6 +34,9 @@ just health
 `just health` should report `{"status": "ok"}`. If it doesn't, see
 Troubleshooting below before doing anything else.
 
+Once healthy, open **http://localhost:5173** in any browser — that's the
+actual app (the daily to-do list). `just health` only checks the API.
+
 ## What `just dev` does
 
 Idempotent — safe to re-run at any time, including on an already-running
@@ -41,13 +44,13 @@ stack:
 
 1. Creates `.env` from `.env.example` on first run (and stops — you must fill
    in the generated secret yourself; see Quick start above).
-2. Starts services: the FastAPI backend (`api`) and Postgres (`db`), via
-   `docker-compose.yml`.
-3. Waits for `/health` to report ok, then prints it.
+2. Starts services: the FastAPI backend (`api`), Postgres (`db`), and the
+   React frontend (`web`), via `docker-compose.yml`.
+3. Applies pending schema migrations (`just migrate`).
+4. Waits for `/health` to report ok, then prints it.
 
-Schema migrations and seed data aren't part of this yet — there's no schema
-to migrate until the first feature (the daily to-do list) needs one. This
-section will grow a step 3 (migrate) and step 4 (seed) at that point.
+Seed data isn't part of this yet — add a step 5 here the day an empty
+database on first clone becomes annoying enough to fix.
 
 ## Install the commit hooks
 
@@ -78,9 +81,9 @@ by design, so there's no state worth protecting here.
 - **`just up`/`just dev` hangs or errors talking to Docker.** Docker Desktop
   is installed but not running. `open -a Docker`, wait for it to finish
   starting, then retry.
-- **Port already in use (5432 or 8000).** Something else on your machine is
-  already listening there. Change `POSTGRES_PORT`/`API_PORT` in `.env`, or
-  stop the other process.
+- **Port already in use (5432, 8000, or 5173).** Something else on your
+  machine is already listening there. Change `POSTGRES_PORT`/`API_PORT`/
+  `WEB_PORT` in `.env`, or stop the other process.
 
 ## Where to go next
 
