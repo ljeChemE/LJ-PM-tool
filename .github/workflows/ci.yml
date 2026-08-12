@@ -39,13 +39,13 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install -r backend/requirements-dev.txt
       - run: ruff check .
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: "npm"
@@ -57,10 +57,10 @@ jobs:
     name: Type check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # No backend type checker yet (mypy or similar) — same gap noted in
       # the justfile's typecheck recipe; add both together the day one lands.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: "npm"
@@ -90,8 +90,8 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install -r backend/requirements-dev.txt
@@ -123,8 +123,8 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install -r backend/requirements-dev.txt
@@ -154,11 +154,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - run: docker build -t api:scan ./backend
       - name: Scan api image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: "api:scan"
           severity: "HIGH,CRITICAL"
@@ -174,7 +174,7 @@ jobs:
 
       - run: docker build -t web:scan ./frontend
       - name: Scan web image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.36.0
         with:
           image-ref: "web:scan"
           severity: "HIGH,CRITICAL"
@@ -190,7 +190,7 @@ jobs:
     name: Validate ops artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Download the pinned binary directly rather than a third-party
       # "setup-actionlint" marketplace action — one fewer supply-chain link
